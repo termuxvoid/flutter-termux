@@ -1,8 +1,8 @@
 <a href="https://flutter.dev/">
   <h1 align="center">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://storage.googleapis.com/cms-storage-bucket/6e19fee6b47b36ca613f.png">
-      <img alt="Flutter" src="https://storage.googleapis.com/cms-storage-bucket/c823e53b3a1a7b0d36a9.png">
+      <source media="(prefers-color-scheme: dark)" srcset="https://camo.githubusercontent.com/792e3b1f45d4d9822b92db7c2ede63331ce78003c01f45e739af74b6e5083b67/68747470733a2f2f646f63732e666c75747465722e6465762f6c6f676f5f6461726b2e706e67">
+      <img alt="Flutter" src="https://camo.githubusercontent.com/792e3b1f45d4d9822b92db7c2ede63331ce78003c01f45e739af74b6e5083b67/68747470733a2f2f646f63732e666c75747465722e6465762f6c6f676f5f6461726b2e706e67">
     </picture>
   </h1>
 </a>
