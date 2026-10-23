@@ -7,23 +7,22 @@
   </h1>
 </a>
 
+<h1 align="center">Flutter for Termux</h1>
 
-Run the Flutter SDK directly on your Android device using the Termux terminal emulator.
+Run the Flutter SDK directly on your Android device with Termux.
 
-## 🚀 Installation
-
-Open Termux and run the following command:
+## Installation
 
 ```bash
-apt install flutter -y
+pkg install flutter
 ```
-> Note make sure you have termuxvoid in your source
 
-## 📺 Tutorial
+## Tutorial
 
-For a step-by-step guide on how to set up and use Flutter in Termux, watch this video:
-**[https://youtu.be/qhfORvHCQ5M](https://youtu.be/qhfORvHCQ5M)**
+For a step-by-step guide to setting up and using Flutter in Termux:
 
-## 🙏 Acknowledgments
+[Watch the tutorial](https://youtu.be/qhfORvHCQ5M)
 
-Special thanks to **[mumumusuc/termux-flutter](https://github.com/mumumusuc/termux-flutter)** for making it possible to run Flutter in Termux.
+## Acknowledgments
+
+Special thanks to [mumumusuc/termux-flutter](https://github.com/mumumusuc/termux-flutter) for making Flutter on Termux possible.

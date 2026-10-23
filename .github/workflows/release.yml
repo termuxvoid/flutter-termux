@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths: [VERSION]
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: Flutter target architecture
+        required: true
+        type: choice
+        default: arm64
+        options:
+          - arm64
+          - x64
+          - arm
+          - x86
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      should_release: ${{ steps.ver.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          [ -n "$VERSION" ] || { echo "VERSION is empty"; exit 1; }
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            echo "release $VERSION already exists; nothing to do"
+          else
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            echo "no release for $VERSION; will build"
+          fi
+
+  build:
+    name: build and publish
+    needs: resolve
+    runs-on: ubuntu-latest
+    if: needs.resolve.outputs.should_release == 'true'
+    timeout-minutes: 300
+    env:
+      ARCH: ${{ github.event.inputs.arch || 'arm64' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install host dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libfreetype-dev libfontconfig-dev ninja-build
+
+      - name: Setup depot_tools
+        uses: newkdev/setup-depot-tools@v1.0.1
+
+      - name: Setup Android NDK
+        id: ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+          add-to-path: false
+
+      - name: Build
+        env:
+          ANDROID_NDK: ${{ steps.ndk.outputs.ndk-path }}
+        run: |
+          python3 build.py \
+            --version "${{ needs.resolve.outputs.version }}" \
+            --arch "$ARCH" \
+            --jobs "$(nproc)" \
+            --work-dir "$RUNNER_TEMP/flutter-build" \
+            --output-dir dist
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.resolve.outputs.version }}
+          name: Flutter ${{ needs.resolve.outputs.version }}
+          files: dist/*.tar.gz
+          fail_on_unmatched_files: true
