@@ -79,8 +79,8 @@ STAMPS = ["engine-dart-sdk", "flutter_sdk", "font-subset", "linux-sdk"]
 
 # Not used by the flutter command at runtime; .git stays because flutter exits
 # without it.
-EXCLUDED = [".agents", ".github", ".idea", ".vscode", "dev", "docs",
-            "engine", "examples"]
+EXCLUDED = [".agents", ".claude", ".github", ".idea", ".vscode", "dev",
+            "docs", "engine", "examples"]
 
 
 def fail(message):
