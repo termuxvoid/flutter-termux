@@ -212,6 +212,7 @@ def configure(flutter, ndk, arch, sysroot):
         "--no-backtrace",
         "--clang",
         "--lto",
+        "--ccache",
         "--no-enable-unittests",
         "--no-build-embedder-examples",
         "--no-prebuilt-dart-sdk",
@@ -341,7 +342,7 @@ def parse_args():
         "--version", default=None,
         help="Flutter tag (default: the VERSION file)")
     parser.add_argument("--arch", default="arm64", choices=ARCHES)
-    parser.add_argument("--jobs", type=int, default=os.cpu_count())
+    parser.add_argument("--jobs", type=int, default=None)
     parser.add_argument("--work-dir", default=".work")
     parser.add_argument("--output-dir", default="dist")
     parser.add_argument("--patches", default="patches")

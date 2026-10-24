@@ -66,6 +66,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: flutter-${{ runner.os }}-${{ github.event.inputs.arch || 'arm64' }}-${{ needs.resolve.outputs.version }}
+          max-size: 4G
+
       - name: Install host dependencies
         run: |
           sudo apt-get update
@@ -89,7 +95,6 @@ jobs:
           python3 build.py \
             --version "${{ needs.resolve.outputs.version }}" \
             --arch "$ARCH" \
-            --jobs "$(nproc)" \
             --work-dir "$RUNNER_TEMP/flutter-build" \
             --output-dir dist
 
