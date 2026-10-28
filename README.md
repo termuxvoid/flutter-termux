@@ -66,7 +66,7 @@ No Android Studio and no on-device compilation are required. Install the package
 | Storage | About 2 GB free for the download, extraction, and package cache |
 | Network | Internet access for the first install and for fetching dependencies |
 | Optional | [Termux:X11](https://github.com/termux/termux-x11/releases) for Linux desktop apps |
-| Optional | `android-sdk` from TermuxVoid for Android builds |
+| Optional | `android-sdk`, `android-ndk`, and `android-cmake` from TermuxVoid for Android builds |
 
 > Release assets are built for `aarch64` and `x86_64`. The source build also accepts `arm` and `x86`, but those are not published as release assets.
 
@@ -106,7 +106,7 @@ flutter --version
 flutter doctor -v
 ```
 
-`flutter doctor` may report missing Android tooling until you install and configure `android-sdk`. That is expected for Linux-only or web-only setups.
+`flutter doctor` may report missing Android tooling until you install and configure the Android packages. That is expected for Linux-only or web-only setups.
 
 ## Quick start
 
@@ -130,13 +130,15 @@ flutter run -d linux
 
 ### Android
 
+Install the TermuxVoid Android packages, then connect a device:
+
 ```bash
-pkg install android-sdk
+pkg install android-sdk android-ndk android-cmake
 flutter devices
 flutter run -d <device-id>
 ```
 
-Enable wireless debugging or connect through ADB, then use the device ID shown by `flutter devices`.
+`android-sdk` provides the SDK, platform tools, and build tools; `android-ndk` and `android-cmake` provide native compilation. Enable wireless debugging or connect through ADB, then use the device ID shown by `flutter devices`.
 
 ### Web server
 
@@ -151,7 +153,7 @@ Open `http://localhost:8080` in a browser on the device.
 | Target | Status | Notes |
 | --- | --- | --- |
 | Linux desktop (GTK) | Supported | Requires Termux:X11 |
-| Android | Supported | Requires `android-sdk` and a connected device |
+| Android | Supported | Requires `android-sdk`, `android-ndk`, `android-cmake`, and a connected device |
 | Web server | Supported | Use `flutter run -d web-server` |
 | iOS / macOS / Windows | Not applicable | Requires their native toolchains |
 
@@ -226,10 +228,11 @@ python3 build.py --version 3.47.8 --arch arm64 --jobs 6
 
 ## Release process
 
-1. Update [`VERSION`](VERSION) to the new Flutter tag.
-2. Open a pull request and merge it into `main`.
+1. Update [`VERSION`](VERSION) to the new Flutter tag in a pull request.
+2. Merge the pull request into `main`.
 3. The [release workflow](.github/workflows/release.yml) checks whether the release already exists, builds both architectures in parallel on free `ubuntu-latest` runners, and publishes `flutter_<version>_aarch64.tar.gz` and `flutter_<version>_x86_64.tar.gz`.
-4. The workflow can also be started manually from the Actions tab. Manual runs build both architectures; set `publish` to `false` to keep the archives as workflow artifacts only.
+
+The workflow only runs when `VERSION` changes on `main`. Pushing to a release branch or opening a pull request does not start it.
 
 The build uses the upstream Flutter source plus the patches in this repository. Engine compilation is cached with ccache to keep later releases faster.
 
@@ -260,7 +263,7 @@ Confirm that the TermuxVoid repository was added successfully. For APT, check `$
 
 ### Android toolchain errors in `flutter doctor`
 
-Install `android-sdk` from TermuxVoid and accept the Android licenses when prompted. A physical device or emulator must also be connected for `flutter run`.
+Install `android-sdk`, `android-ndk`, and `android-cmake` from TermuxVoid and accept the Android licenses when prompted. A physical device or emulator must also be connected for `flutter run`.
 
 ### Linux desktop app does not start
 

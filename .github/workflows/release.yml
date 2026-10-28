@@ -4,13 +4,6 @@ on:
   push:
     branches: [main]
     paths: [VERSION]
-  workflow_dispatch:
-    inputs:
-      publish:
-        description: Publish a GitHub release (false = upload artifacts only)
-        required: false
-        type: boolean
-        default: true
 
 permissions:
   contents: write
@@ -50,7 +43,7 @@ jobs:
     name: build (${{ matrix.arch }})
     needs: resolve
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || needs.resolve.outputs.should_release == 'true'
+    if: needs.resolve.outputs.should_release == 'true'
     timeout-minutes: 300
     strategy:
       fail-fast: false
@@ -105,9 +98,7 @@ jobs:
   release:
     name: publish release
     needs: [resolve, build]
-    if: |
-      needs.build.result == 'success' &&
-      (github.event_name == 'push' || inputs.publish)
+    if: needs.build.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
