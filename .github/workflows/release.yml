@@ -6,16 +6,11 @@ on:
     paths: [VERSION]
   workflow_dispatch:
     inputs:
-      arch:
-        description: Flutter target architecture
-        required: true
-        type: choice
-        default: arm64
-        options:
-          - arm64
-          - x64
-          - arm
-          - x86
+      publish:
+        description: Publish a GitHub release (false = upload artifacts only)
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -45,20 +40,22 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "should_release=false" >> "$GITHUB_OUTPUT"
-            echo "release $VERSION already exists; nothing to do"
+            echo "release $VERSION already exists"
           else
             echo "should_release=true" >> "$GITHUB_OUTPUT"
             echo "no release for $VERSION; will build"
           fi
 
   build:
-    name: build and publish
+    name: build (${{ matrix.arch }})
     needs: resolve
     runs-on: ubuntu-latest
-    if: needs.resolve.outputs.should_release == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.resolve.outputs.should_release == 'true'
     timeout-minutes: 300
-    env:
-      ARCH: ${{ github.event.inputs.arch || 'arm64' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, x64]
     steps:
       - uses: actions/checkout@v4
 
@@ -69,7 +66,7 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: flutter-${{ runner.os }}-${{ github.event.inputs.arch || 'arm64' }}-${{ needs.resolve.outputs.version }}
+          key: flutter-${{ runner.os }}-${{ matrix.arch }}-${{ needs.resolve.outputs.version }}
           max-size: 4G
 
       - name: Install host dependencies
@@ -94,9 +91,30 @@ jobs:
         run: |
           python3 build.py \
             --version "${{ needs.resolve.outputs.version }}" \
-            --arch "$ARCH" \
+            --arch "${{ matrix.arch }}" \
             --work-dir "$RUNNER_TEMP/flutter-build" \
             --output-dir dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-${{ matrix.arch }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  release:
+    name: publish release
+    needs: [resolve, build]
+    if: |
+      needs.build.result == 'success' &&
+      (github.event_name == 'push' || inputs.publish)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: flutter-*
+          merge-multiple: true
+          path: dist
 
       - name: Release
         uses: softprops/action-gh-release@v2
