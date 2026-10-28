@@ -37,6 +37,7 @@ No Android Studio and no on-device compilation are required. Install the package
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick start](#quick-start)
+- [Building Android apps](BUILDING_APPS.md)
 - [Supported targets](#supported-targets)
 - [Updating and uninstalling](#updating-and-uninstalling)
 - [Build from source](#build-from-source)
@@ -66,7 +67,7 @@ No Android Studio and no on-device compilation are required. Install the package
 | Storage | About 2 GB free for the download, extraction, and package cache |
 | Network | Internet access for the first install and for fetching dependencies |
 | Optional | [Termux:X11](https://github.com/termux/termux-x11/releases) for Linux desktop apps |
-| Optional | `android-sdk`, `android-ndk`, and `android-cmake` from TermuxVoid for Android builds |
+| Optional | [`android-sdk`, `android-ndk`, and `android-cmake`](BUILDING_APPS.md) from TermuxVoid for Android builds |
 
 > Release assets are built for `aarch64` and `x86_64`. The source build also accepts `arm` and `x86`, but those are not published as release assets.
 
@@ -134,11 +135,14 @@ Install the TermuxVoid Android packages, then connect a device:
 
 ```bash
 pkg install android-sdk android-ndk android-cmake
+flutter config --android-sdk "$PREFIX/opt/android-sdk"
 flutter devices
 flutter run -d <device-id>
 ```
 
-`android-sdk` provides the SDK, platform tools, and build tools; `android-ndk` and `android-cmake` provide native compilation. Enable wireless debugging or connect through ADB, then use the device ID shown by `flutter devices`.
+`android-sdk` provides the SDK, platform tools, and build tools; `android-ndk` and `android-cmake` provide native compilation. No environment variables need to be exported.
+
+Flutter projects also need the Termux-specific `local.properties`, `gradle.properties`, and `app/build.gradle.kts` values. See [Building Android apps](BUILDING_APPS.md) for the required edits, or use `apkgen-cli`, whose Flutter template already includes them.
 
 ### Web server
 
@@ -198,6 +202,8 @@ export ANDROID_NDK="$HOME/android-ndk-r27c"
 python3 build.py --arch arm64   # or: --arch x64
 ```
 
+`ANDROID_NDK` is only for building the Flutter SDK itself. Building apps uses `local.properties`; see [Building Android apps](BUILDING_APPS.md).
+
 `build.py` reads the Flutter version from [`VERSION`](VERSION), clones that Flutter tag, syncs the engine dependencies, applies the patches in [`patches/`](patches), builds the debug engine, assembles the SDK, and writes:
 
 ```text
@@ -218,6 +224,7 @@ python3 build.py --version 3.47.8 --arch arm64 --jobs 6
 .
 ├── .github/workflows/release.yml   # Build and publish GitHub releases
 ├── build.py                        # Clone, patch, build, assemble, package
+├── BUILDING_APPS.md                # Android app build setup on Termux
 ├── patches/
 │   ├── engine.patch                # Termux engine and toolchain changes
 │   ├── dart.patch                  # Dart host-platform detection
