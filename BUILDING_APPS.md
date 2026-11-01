@@ -108,7 +108,7 @@ Keep `compileSdk = flutter.compileSdkVersion` and the existing `compileOptions` 
 
 ### `android/settings.gradle.kts` and the Gradle wrapper
 
-No Termux-specific changes are needed when the project is created with Flutter 3.47.8. The generated project already uses:
+No Termux-specific changes are needed when the project is created with Flutter 3.47.9. The generated project already uses:
 
 - Android Gradle Plugin `9.1.0`
 - Kotlin `2.4.0`
