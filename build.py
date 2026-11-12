@@ -283,7 +283,7 @@ def configure_android(flutter, ndk, cpu, mode, arch, sysroot):
         "--gn-args", "is_termux=true",
         "--gn-args", f"is_termux_host={str(TERMUX_HOST).lower()}",
         "--gn-args", f"termux_api_level={API}",
-        "--gn-args", f"termux_snapshot_cpu={arch}",
+        "--gn-args", f'termux_snapshot_cpu="{arch}"',
     ]
     run(command, cwd=flutter)
 
