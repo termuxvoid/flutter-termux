@@ -1,6 +1,19 @@
+diff --git a/engine/src/build/config/termux/termux.gni b/engine/src/build/config/termux/termux.gni
+index 0d97976..fac0202 100644
+--- a/engine/src/build/config/termux/termux.gni
++++ b/engine/src/build/config/termux/termux.gni
+@@ -3,4 +3,6 @@ declare_args() {
+ 
+   is_termux = false
+   is_termux_host = false
++  # Empty except in the extra Android snapshotter configs.
++  termux_snapshot_cpu = ""
+ }
+diff --git a/engine/src/flutter/BUILD.gn b/engine/src/flutter/BUILD.gn
+index 524cc5b..37c3d46 100644
 --- a/engine/src/flutter/BUILD.gn
 +++ b/engine/src/flutter/BUILD.gn
-@@ -349,3 +349,24 @@
+@@ -349,3 +349,20 @@ if (host_os == "win") {
      outputs = [ "$root_build_dir/gen_snapshot/gen_snapshot.exe" ]
    }
  }
@@ -9,10 +22,6 @@
 +# compiled for the Termux device architecture rather than for the machine
 +# running the build (which is usually x64). This is only enabled by the extra
 +# Android release configurations in build.py.
-+declare_args() {
-+  termux_snapshot_cpu = ""
-+}
-+
 +if (termux_snapshot_cpu != "") {
 +  _termux_gen_snapshot_target =
 +      "$dart_src/runtime/bin:gen_snapshot(//build/toolchain/termux:$termux_snapshot_cpu)"
