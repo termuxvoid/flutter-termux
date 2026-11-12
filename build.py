@@ -43,6 +43,14 @@ ARCHES = {"arm64": "aarch64", "arm": "arm", "x64": "x86_64", "x86": "i686"}
 MODE = "debug"
 NDK_HOST = "linux-x86_64"
 API = 26
+TERMUX_HOST = os.environ.get("PREFIX") == "/data/data/com.termux/files/usr"
+
+# Android AOT snapshotters are host tools but target one APK ABI each, so the
+# release matrix needs one build per CPU. Profile is skipped to keep CI time
+# down; profile APK builds still need a profile snapshotter.
+ANDROID_TARGETS = ["arm", "arm64", "x64"]
+ANDROID_MODES = ["release"]
+ELF_MACHINES = {"arm": 40, "arm64": 183, "x64": 62, "x86": 3}
 
 # system libraries the engine is linked against; headers and .so files
 # are unpacked from the Termux repos into a fake sysroot.
@@ -74,7 +82,9 @@ ARTIFACTS = [
     "gen/flutter/lib/snapshot/vm_isolate_snapshot.bin",
 ]
 
-STAMPS = ["engine-dart-sdk", "flutter_sdk", "font-subset", "linux-sdk"]
+STAMPS = [
+    "engine-dart-sdk", "flutter_sdk", "font-subset", "linux-sdk", "android-sdk",
+]
 
 # Not used by the flutter command at runtime; .git stays because flutter exits
 # without it.
@@ -147,6 +157,7 @@ def sync(flutter):
 
 def apply_patches(flutter, patches):
     run(["git", "apply", patches / "engine.patch"], cwd=flutter)
+    run(["git", "apply", patches / "android-snapshot.patch"], cwd=flutter)
     run(
         ["git", "apply", patches / "dart.patch"],
         cwd=flutter / "engine/src/flutter/third_party/dart")
@@ -199,8 +210,6 @@ def configure(flutter, ndk, arch, sysroot):
     toolchain = ndk / "toolchains/llvm/prebuilt" / NDK_HOST
     if not toolchain.is_dir():
         fail(f"NDK toolchain not found: {toolchain}")
-    termux_host = (
-        os.environ.get("PREFIX") == "/data/data/com.termux/files/usr")
 
     command = [
         "vpython3", "engine/src/flutter/tools/gn",
@@ -229,11 +238,101 @@ def configure(flutter, ndk, arch, sysroot):
         "--gn-args", "skia_use_perfetto=false",
         "--gn-args", f'custom_sysroot="{sysroot}"',
         "--gn-args", "is_termux=true",
-        "--gn-args", f"is_termux_host={str(termux_host).lower()}",
+        "--gn-args", f"is_termux_host={str(TERMUX_HOST).lower()}",
         "--gn-args", f"termux_api_level={API}",
         "--gn-args", 'extra_ldflags=["-lEGL", "-lGLESv2"]',
     ]
     run(command, cwd=flutter)
+
+
+def android_out_dir(flutter, mode, cpu):
+    return flutter / "engine/src/out" / f"android_{mode}_{cpu}"
+
+
+def configure_android(flutter, ndk, cpu, mode, arch, sysroot):
+    toolchain = ndk / "toolchains/llvm/prebuilt" / NDK_HOST
+    if not toolchain.is_dir():
+        fail(f"NDK toolchain not found: {toolchain}")
+
+    command = [
+        "vpython3", "engine/src/flutter/tools/gn",
+        "--android",
+        "--android-cpu", cpu,
+        "--runtime-mode", mode,
+        "--target-dir", f"android_{mode}_{cpu}",
+        "--no-goma",
+        "--no-backtrace",
+        "--clang",
+        "--no-lto",
+        "--stripped",
+        "--ccache",
+        "--no-enable-unittests",
+        "--no-build-embedder-examples",
+        "--no-prebuilt-dart-sdk",
+        "--no-build-glfw-shell",
+        "--target-toolchain", toolchain,
+        "--gn-args", "symbol_level=0",
+        "--gn-args", "arm_use_neon=false",
+        "--gn-args", "arm_optionally_use_neon=true",
+        "--gn-args", "dart_include_wasm_opt=false",
+        "--gn-args", "dart_platform_sdk=false",
+        "--gn-args", "use_default_linux_sysroot=false",
+        "--gn-args", "dart_support_perfetto=false",
+        "--gn-args", "skia_use_perfetto=false",
+        "--gn-args", f'custom_sysroot="{sysroot}"',
+        "--gn-args", "is_termux=true",
+        "--gn-args", f"is_termux_host={str(TERMUX_HOST).lower()}",
+        "--gn-args", f"termux_api_level={API}",
+        "--gn-args", f"termux_snapshot_cpu={arch}",
+    ]
+    run(command, cwd=flutter)
+
+
+def check_elf(path, arch):
+    path = need(path)
+    header = path.read_bytes()[:20]
+    if header[:4] != b"\x7fELF" or len(header) < 20:
+        fail(f"not an ELF binary: {path}")
+    machine = int.from_bytes(header[18:20], "little")
+    if machine != ELF_MACHINES[arch]:
+        fail(f"{path}: ELF machine {machine}, expected {arch}")
+
+
+def build_android_snapshots(flutter, ndk, arch, jobs, sysroot):
+    for mode in ANDROID_MODES:
+        for cpu in ANDROID_TARGETS:
+            configure_android(flutter, ndk, cpu, mode, arch, sysroot)
+            command = [
+                "ninja", "-C", android_out_dir(flutter, mode, cpu), "-k", "0",
+            ]
+            if jobs:
+                command.append(f"-j{jobs}")
+            command.append("termux_gen_snapshot")
+            if mode == "release" and cpu == "arm64":
+                command.append("strong_platform")
+            run(command)
+
+    engine = flutter / "bin/cache/artifacts/engine"
+    for mode in ANDROID_MODES:
+        for cpu in ANDROID_TARGETS:
+            host = f"android-{cpu}-{mode}/linux-{arch}"
+            source = android_out_dir(flutter, mode, cpu) / "termux_gen_snapshot"
+            check_elf(source, arch)
+            copy(source, engine / host / "gen_snapshot")
+
+    # The updater checks every linux-x64 dir on Linux, so create the ones we do
+    # not ship (including profile) to keep it from replacing our snapshotters
+    # with x64 binaries on arm64.
+    for mode in ["release", "profile"]:
+        for cpu in ANDROID_TARGETS:
+            (engine / f"android-{cpu}-{mode}/linux-x64").mkdir(
+                parents=True, exist_ok=True)
+
+    product = (
+        android_out_dir(flutter, "release", "arm64") / "flutter_patched_sdk")
+    for name in ["platform_strong.dill", "vm_outline_strong.dill"]:
+        copy(need(product / name),
+             engine / "common/flutter_patched_sdk_product" / name)
 
 
 def build(flutter, arch, jobs):
@@ -324,6 +423,8 @@ def package_tar(flutter, output, arch):
         "flutter/bin/internal/engine.version",
         "flutter/bin/cache/dart-sdk/bin/dart",
         f"flutter/bin/cache/artifacts/engine/linux-{arch}/gen_snapshot",
+        f"flutter/bin/cache/artifacts/engine/android-arm64-release/linux-{arch}/gen_snapshot",
+        "flutter/bin/cache/artifacts/engine/common/flutter_patched_sdk_product/platform_strong.dill",
         "flutter/version",
     ]
     missing = [name for name in required if name not in names]
@@ -356,7 +457,9 @@ def main():
         fail("ANDROID_NDK is not set")
 
     patches = Path(args.patches).resolve()
-    for name in ["engine.patch", "dart.patch", "skia.patch"]:
+    for name in [
+        "engine.patch", "android-snapshot.patch", "dart.patch", "skia.patch",
+    ]:
         if not (patches / name).is_file():
             fail(f"missing patch: {patches / name}")
 
@@ -374,6 +477,7 @@ def main():
     build(flutter, args.arch, args.jobs)
 
     assemble(flutter, args.arch)
+    build_android_snapshots(flutter, Path(ndk), args.arch, args.jobs, sysroot)
     run(["git", "reset", "--hard"], cwd=flutter)
     run(["git", "sparse-checkout", "init", "--no-cone"], cwd=flutter)
     run(

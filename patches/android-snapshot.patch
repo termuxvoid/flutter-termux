@@ -1,0 +1,27 @@
+--- a/engine/src/flutter/BUILD.gn
++++ b/engine/src/flutter/BUILD.gn
+@@ -349,3 +349,24 @@
+     outputs = [ "$root_build_dir/gen_snapshot/gen_snapshot.exe" ]
+   }
+ }
++
++# On Termux the Android AOT snapshotter is a host tool, but it has to be
++# compiled for the Termux device architecture rather than for the machine
++# running the build (which is usually x64). This is only enabled by the extra
++# Android release configurations in build.py.
++declare_args() {
++  termux_snapshot_cpu = ""
++}
++
++if (termux_snapshot_cpu != "") {
++  _termux_gen_snapshot_target =
++      "$dart_src/runtime/bin:gen_snapshot(//build/toolchain/termux:$termux_snapshot_cpu)"
++  copy("termux_gen_snapshot") {
++    deps = [ _termux_gen_snapshot_target ]
++
++    termux_gen_snapshot_out_dir =
++        get_label_info(_termux_gen_snapshot_target, "root_out_dir")
++    sources = [ "$termux_gen_snapshot_out_dir/gen_snapshot" ]
++    outputs = [ "$root_build_dir/termux_gen_snapshot" ]
++  }
++}
