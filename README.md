@@ -19,7 +19,7 @@
   <a href="https://github.com/termuxvoid/flutter-termux/releases"><img src="https://img.shields.io/github/downloads/termuxvoid/flutter-termux/total?style=for-the-badge&logo=github&color=02569B&labelColor=0d1117" alt="Downloads"></a>
   <a href="https://github.com/termuxvoid/flutter-termux/issues"><img src="https://img.shields.io/github/issues/termuxvoid/flutter-termux?style=for-the-badge&color=fd7d00&labelColor=0d1117" alt="Issues"></a>
   <a href="https://github.com/termuxvoid/flutter-termux/stargazers"><img src="https://img.shields.io/github/stars/termuxvoid/flutter-termux?style=for-the-badge&color=ffd700&labelColor=0d1117" alt="Stars"></a>
-  <img src="https://img.shields.io/badge/Flutter-3.47.9-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter 3.47.9">
+  <img src="https://img.shields.io/badge/Flutter-3.50.0-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter 3.50.0">
   <img src="https://img.shields.io/badge/Termux-aarch64%20%7C%20x86__64-000000?style=for-the-badge" alt="Termux aarch64 and x86_64">
 </p>
 
@@ -215,7 +215,7 @@ Useful options:
 
 ```bash
 python3 build.py --help
-python3 build.py --version 3.47.9 --arch arm64 --jobs 6
+python3 build.py --version 3.50.0 --arch arm64 --jobs 6
 ```
 
 ## Repository layout

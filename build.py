@@ -70,7 +70,6 @@ ARTIFACTS = [
     "libpath_ops.so",
     "libtessellator.so",
     "gen/frontend_server_aot.dart.snapshot",
-    "gen/const_finder.dart.snapshot",
     "gen/flutter/lib/snapshot/isolate_snapshot.bin",
     "gen/flutter/lib/snapshot/vm_isolate_snapshot.bin",
 ]
