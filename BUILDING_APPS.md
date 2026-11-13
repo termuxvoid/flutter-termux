@@ -133,6 +133,14 @@ flutter build apk --debug --split-per-abi
 
 The APKs are written to `build/app/outputs/flutter-apk/`.
 
+Build a release APK:
+
+```bash
+flutter build apk --release
+```
+
+The SDK ships Android release AOT snapshotters for `arm`, `arm64`, and `x64`, so no extra flags are needed. The output is `build/app/outputs/flutter-apk/app-release.apk`. Profile mode is not packaged; use debug or release.
+
 To use apkgen instead:
 
 ```bash
@@ -193,6 +201,8 @@ The SDK path in `local.properties` must exist, and `flutter config` must point a
 ### Release builds
 
 The generated Flutter project signs release builds with the debug key by default. Configure your own signing key before distributing a release APK.
+
+`flutter build apk --release` is supported. The SDK includes release snapshotters for `arm`, `arm64`, and `x64`; it does not include profile-mode snapshotters, so `flutter build apk --profile` is not supported.
 
 ## Related links
 

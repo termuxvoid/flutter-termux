@@ -54,6 +54,7 @@ No Android Studio and no on-device compilation are required. Install the package
 - **Prebuilt SDK** — no engine compilation on your device.
 - **Termux-native** — patched Dart, Skia, and engine sources for the Termux environment.
 - **Android, Linux, and web workflows** — build Android apps, run Linux desktop apps through Termux:X11, or serve a web build locally.
+- **Android release APKs** — ships release AOT snapshotters for `arm`, `arm64`, and `x64`, so `flutter build apk --release` works on-device. Profile mode is not packaged.
 - **Hash-verified installs** — the TermuxVoid package checks the release archive SHA-256 before extracting.
 - **Simple updates** — upgrade with the normal Termux package manager.
 - **Scripted builds** — the same script and patches are used by the GitHub Actions release workflow.
@@ -142,6 +143,14 @@ flutter run -d <device-id>
 
 `android-sdk` provides the SDK, platform tools, and build tools; `android-ndk` and `android-cmake` provide native compilation. No environment variables need to be exported.
 
+Build a release APK:
+
+```bash
+flutter build apk --release
+```
+
+Release AOT snapshotters are included for `arm`, `arm64`, and `x64`; the output is `build/app/outputs/flutter-apk/app-release.apk`. Profile mode is not packaged.
+
 Flutter projects also need the Termux-specific `local.properties`, `gradle.properties`, and `app/build.gradle.kts` values. See [Building Android apps](BUILDING_APPS.md) for the required edits, or use `apkgen-cli`, whose Flutter template already includes them.
 
 ### Web server
@@ -157,7 +166,7 @@ Open `http://localhost:8080` in a browser on the device.
 | Target | Status | Notes |
 | --- | --- | --- |
 | Linux desktop (GTK) | Supported | Requires Termux:X11 |
-| Android | Supported | Requires `android-sdk`, `android-ndk`, `android-cmake`, and a connected device |
+| Android | Supported | Debug builds and release APKs; profile mode is not packaged. Requires `android-sdk`, `android-ndk`, `android-cmake`, and a connected device |
 | Web server | Supported | Use `flutter run -d web-server` |
 | iOS / macOS / Windows | Not applicable | Requires their native toolchains |
 
@@ -227,6 +236,7 @@ python3 build.py --version 3.50.0 --arch arm64 --jobs 6
 ├── BUILDING_APPS.md                # Android app build setup on Termux
 ├── patches/
 │   ├── engine.patch                # Termux engine and toolchain changes
+│   ├── android-snapshot.patch      # Android release snapshotter build target
 │   ├── dart.patch                  # Dart host-platform detection
 │   └── skia.patch                  # Skia Termux platform detection
 ├── VERSION                         # Flutter tag to build
