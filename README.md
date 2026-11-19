@@ -1,8 +1,8 @@
 <p align="center">
   <a href="https://flutter.dev/">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://camo.githubusercontent.com/792e3b1f45d4d9822b92db7c2ede63331ce78003c01f45e739af74b6e5083b67/68747470733a2f2f646f63732e666c75747465722e6465762f6c6f676f5f6461726b2e706e67">
-      <img alt="Flutter" src="https://camo.githubusercontent.com/792e3b1f45d4d9822b92db7c2ede63331ce78003c01f45e739af74b6e5083b67/68747470733a2f2f646f63732e666c75747465722e6465762f6c6f676f5f6461726b2e706e67">
+      <source media="(prefers-color-scheme: dark)" srcset="https://flutter.dev/assets/flutter-logo-white.8f2c30604310e8ec066cedbb4274b27b.svg">
+      <img alt="Flutter" src="https://flutter.dev/assets/flutter-logo-white.8f2c30604310e8ec066cedbb4274b27b.svg">
     </picture>
   </a>
 </p>
