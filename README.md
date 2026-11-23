@@ -19,7 +19,7 @@
   <a href="https://github.com/termuxvoid/flutter-termux/releases"><img src="https://img.shields.io/github/downloads/termuxvoid/flutter-termux/total?style=for-the-badge&logo=github&color=02569B&labelColor=0d1117" alt="Downloads"></a>
   <a href="https://github.com/termuxvoid/flutter-termux/issues"><img src="https://img.shields.io/github/issues/termuxvoid/flutter-termux?style=for-the-badge&color=fd7d00&labelColor=0d1117" alt="Issues"></a>
   <a href="https://github.com/termuxvoid/flutter-termux/stargazers"><img src="https://img.shields.io/github/stars/termuxvoid/flutter-termux?style=for-the-badge&color=ffd700&labelColor=0d1117" alt="Stars"></a>
-  <img src="https://img.shields.io/badge/Flutter-3.50.0-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter 3.50.0">
+  <img src="https://img.shields.io/badge/Flutter-3.50.1-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter 3.50.1">
   <img src="https://img.shields.io/badge/Termux-aarch64%20%7C%20x86__64-000000?style=for-the-badge" alt="Termux aarch64 and x86_64">
 </p>
 
@@ -224,7 +224,7 @@ Useful options:
 
 ```bash
 python3 build.py --help
-python3 build.py --version 3.50.0 --arch arm64 --jobs 6
+python3 build.py --version 3.50.1 --arch arm64 --jobs 6
 ```
 
 ## Repository layout
@@ -245,7 +245,7 @@ python3 build.py --version 3.50.0 --arch arm64 --jobs 6
 
 ## Release process
 
-1. Update [`VERSION`](VERSION) to the new Flutter tag in a pull request.
+1. Update [`VERSION`](VERSION) and the version references in this README and [Building Android apps](BUILDING_APPS.md) to the new Flutter tag in a pull request.
 2. Merge the pull request into `main`.
 3. The [release workflow](.github/workflows/release.yml) checks whether the release already exists, builds both architectures in parallel on free `ubuntu-latest` runners, and publishes `flutter_<version>_aarch64.tar.gz` and `flutter_<version>_x86_64.tar.gz`.
 
