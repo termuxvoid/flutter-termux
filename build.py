@@ -92,6 +92,14 @@ EXCLUDED = [".agents", ".claude", ".github", ".idea", ".vscode", "dev",
             "docs", "engine", "examples"]
 
 
+def excluded(name):
+    parts = name.split("/")
+    if parts[0] in EXCLUDED:
+        return True
+    return (len(parts) >= 3 and parts[0] == "packages"
+            and parts[2] in {"test", "test_driver"})
+
+
 def fail(message):
     raise SystemExit(f"error: {message}")
 
@@ -388,9 +396,57 @@ def assemble(flutter, arch):
     need(engine / "gen_snapshot")
 
 
-def package_tar(flutter, output, arch):
+def guard_flutter(flutter):
+    path = flutter / "bin/flutter"
+    text = path.read_text()
+    if "pkg upgrade flutter" in text:
+        return
+    guard = (
+        "\n# TermuxVoid package-managed SDK; upstream self-update would break it.\n"
+        "# shortcut: checks only $1; global flags before the subcommand bypass this guard.\n"
+        'case "${1:-}" in\n'
+        "  upgrade|channel|downgrade)\n"
+        '    echo "flutter: this SDK is managed by TermuxVoid; run \'pkg upgrade flutter\'." >&2\n'
+        "    exit 1\n"
+        "    ;;\n"
+        "esac\n"
+    )
+    shebang, rest = text.split("\n", 1)
+    path.write_text(f"{shebang}\n{guard}{rest}")
+
+
+def make_synthetic_git(flutter, root, version):
+    files = ["bin/flutter", "bin/internal/engine.version"]
+    files += [
+        f"bin/internal/{path.name}"
+        for path in (flutter / "bin/internal").glob("*.version")
+    ]
+    files = sorted(set(files))
+    for name in files:
+        copy(need(flutter / name), root / name)
+    env = os.environ | {
+        "GIT_AUTHOR_DATE": "2000-01-01T00:00:00 +0000",
+        "GIT_COMMITTER_DATE": "2000-01-01T00:00:00 +0000",
+    }
+    run(["git", "init", "-q"], cwd=root, env=env)
+    run(["git", "symbolic-ref", "HEAD", "refs/heads/stable"], cwd=root, env=env)
+    run(["git", "add", "-f", "--", *files], cwd=root, env=env)
+    run([
+        "git", "-c", "user.name=termux", "-c", "user.email=termux@example.com",
+        "-c", "commit.gpgsign=false", "-c", "tag.gpgsign=false",
+        "commit", "-q", "-m", "Init framework",
+    ], cwd=root, env=env)
+    run([
+        "git", "-c", "tag.gpgsign=false", "tag", "-f", version,
+    ], cwd=root, env=env)
+    run(["git", "remote", "add", "origin", FLUTTER_REPO], cwd=root, env=env)
+    return root / ".git"
+
+
+def package_tar(flutter, output, arch, version):
     output.parent.mkdir(parents=True, exist_ok=True)
     output.unlink(missing_ok=True)
+    guard_flutter(flutter)
 
     result = subprocess.run(
         ["git", "-C", flutter, "ls-files", "-z"],
@@ -399,21 +455,24 @@ def package_tar(flutter, output, arch):
         os.fsdecode(name) for name in result.stdout.split(b"\0") if name
     ]
 
-    with tarfile.open(
-            output, "w:gz", compresslevel=9, format=tarfile.PAX_FORMAT) as tar:
-        for name in tracked:
-            if name.split("/", 1)[0] in EXCLUDED:
-                continue
-            path = flutter / name
-            if not path.exists():
-                fail(f"tracked file missing: {name}")
-            tar.add(path, arcname=f"flutter/{name}", recursive=False)
-        tar.add(flutter / ".git", arcname="flutter/.git")
-        tar.add(flutter / "bin/cache", arcname="flutter/bin/cache")
-        if (flutter / "version").exists():
-            tar.add(flutter / "version", arcname="flutter/version")
+    with tempfile.TemporaryDirectory(dir=output.parent) as tmp:
+        gitdir = make_synthetic_git(flutter, Path(tmp), version)
+        with tarfile.open(
+                output, "w:xz", preset=9,
+                format=tarfile.PAX_FORMAT) as tar:
+            for name in tracked:
+                if excluded(name):
+                    continue
+                path = flutter / name
+                if not path.exists():
+                    fail(f"tracked file missing: {name}")
+                tar.add(path, arcname=f"flutter/{name}", recursive=False)
+            tar.add(gitdir, arcname="flutter/.git")
+            tar.add(flutter / "bin/cache", arcname="flutter/bin/cache")
+            if (flutter / "version").exists():
+                tar.add(flutter / "version", arcname="flutter/version")
 
-    with tarfile.open(output, "r:gz") as tar:
+    with tarfile.open(output, "r:xz") as tar:
         names = tar.getnames()
 
     required = [
@@ -435,7 +494,7 @@ def package_tar(flutter, output, arch):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Build Flutter for Termux and package it as tar.gz")
+        description="Build Flutter for Termux and package it as tar.xz")
     parser.add_argument(
         "--version", default=None,
         help="Flutter tag (default: the VERSION file)")
@@ -486,8 +545,8 @@ def main():
 
     output = (
         Path(args.output_dir).resolve()
-        / f"flutter_{version}_{arch}.tar.gz")
-    package_tar(flutter, output, args.arch)
+        / f"flutter_{version}_{arch}.tar.xz")
+    package_tar(flutter, output, args.arch, version)
 
 
 if __name__ == "__main__":

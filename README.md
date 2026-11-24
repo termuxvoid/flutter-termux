@@ -181,7 +181,7 @@ pkg upgrade flutter
 pkg uninstall flutter
 ```
 
-The package installs the SDK to `$PREFIX/opt/flutter` and creates `$PREFIX/bin/flutter`. Uninstalling removes both.
+The package installs the SDK to `$PREFIX/opt/flutter` and creates `$PREFIX/bin/flutter`. Uninstalling removes both. Upstream self-update is disabled (`flutter upgrade`, `flutter channel`, `flutter downgrade`); use `pkg upgrade flutter`.
 
 ## Build from source
 
@@ -216,8 +216,8 @@ python3 build.py --arch arm64   # or: --arch x64
 `build.py` reads the Flutter version from [`VERSION`](VERSION), clones that Flutter tag, syncs the engine dependencies, applies the patches in [`patches/`](patches), builds the debug engine, assembles the SDK, and writes:
 
 ```text
-dist/flutter_<version>_aarch64.tar.gz
-dist/flutter_<version>_x86_64.tar.gz
+dist/flutter_<version>_aarch64.tar.xz
+dist/flutter_<version>_x86_64.tar.xz
 ```
 
 Useful options:
@@ -247,9 +247,9 @@ python3 build.py --arch arm64 --jobs 6
 
 1. Update [`VERSION`](VERSION) to the new Flutter tag in a pull request.
 2. Merge the pull request into `main`.
-3. The [release workflow](.github/workflows/release.yml) checks whether the release already exists, builds both architectures in parallel on free `ubuntu-latest` runners, and publishes `flutter_<version>_aarch64.tar.gz` and `flutter_<version>_x86_64.tar.gz`.
+3. The [release workflow](.github/workflows/release.yml) checks whether the release already exists, builds both architectures in parallel on free `ubuntu-latest` runners, and publishes `flutter_<version>_aarch64.tar.xz` and `flutter_<version>_x86_64.tar.xz`.
 
-The workflow only runs when `VERSION` changes on `main`. Pushing to a release branch or opening a pull request does not start it.
+The workflow only runs when `VERSION` changes on `main`. Pushing to a release branch or opening a pull request does not start it. Version tags containing a hyphen, such as `3.51.0-0.2.pre`, are published as pre-releases.
 
 The build uses the upstream Flutter source plus the patches in this repository. Engine compilation is cached with ccache to keep later releases faster.
 
@@ -291,7 +291,7 @@ Install the Termux:X11 app, start the server with `termux-x11 :0`, and export `D
 The download may be incomplete or corrupted. Clear the partial archive from `$TMPDIR` and retry:
 
 ```bash
-rm -f "$TMPDIR/flutter.tar.gz"
+rm -f "$TMPDIR/flutter.tar.xz"
 pkg reinstall flutter
 ```
 
