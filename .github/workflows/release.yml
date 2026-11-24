@@ -93,7 +93,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: flutter-${{ matrix.arch }}
-          path: dist/*.tar.gz
+          path: dist/*.tar.xz
           if-no-files-found: error
 
   release:
@@ -113,5 +113,7 @@ jobs:
         with:
           tag_name: ${{ needs.resolve.outputs.version }}
           name: Flutter ${{ needs.resolve.outputs.version }}
-          files: dist/*.tar.gz
+          prerelease: ${{ contains(needs.resolve.outputs.version, '-') }}
+          make_latest: ${{ !contains(needs.resolve.outputs.version, '-') }}
+          files: dist/*.tar.xz
           fail_on_unmatched_files: true
